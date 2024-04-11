@@ -50,7 +50,6 @@ func NewConfig(l logger.LoggersInterface) (*Config, error) {
 	return &cfg, nil
 }
 
-// mongodb://admin:password@localhost:27017/
 func initDB(cfg Config) string {
 	if cfg.Mongo.ConnStr != "" {
 		return cfg.Mongo.ConnStr

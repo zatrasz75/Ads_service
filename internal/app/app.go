@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"zatrasz75/Ads_service/configs"
 	"zatrasz75/Ads_service/internal/controller"
+	"zatrasz75/Ads_service/internal/repository"
 	"zatrasz75/Ads_service/pkg/logger"
 	"zatrasz75/Ads_service/pkg/mongo"
 	"zatrasz75/Ads_service/pkg/server"
@@ -15,9 +16,10 @@ import (
 func Run(cfg *configs.Config, l logger.LoggersInterface) {
 	fmt.Println("ConnStr", cfg.Mongo.ConnStr)
 	mg, err := mongo.New(cfg.Mongo.ConnStr, l, mongo.OptionSet(cfg.Mongo.ConnAttempts, cfg.Mongo.ConnTimeout, cfg.Mongo.DbName, cfg.Mongo.CollectionName))
-	fmt.Println(&mg)
 
-	router := controller.NewRouter(cfg, l)
+	repo := repository.New(mg, l, cfg)
+
+	router := controller.NewRouter(cfg, l, repo)
 
 	srv := server.New(router, server.OptionSet(cfg.Server.AddrHost, cfg.Server.AddrPort, cfg.Server.ReadTimeout, cfg.Server.WriteTimeout, cfg.Server.IdleTimeout, cfg.Server.ShutdownTime))
 

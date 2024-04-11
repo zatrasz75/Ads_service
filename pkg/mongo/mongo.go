@@ -15,7 +15,7 @@ type Mongo struct {
 	dbName         string
 	collectionName string
 
-	db *mongo.Client
+	M *mongo.Client
 }
 
 // New Конструктор, принимает строку подключения к БД.
@@ -53,7 +53,7 @@ func New(constr string, l logger.LoggersInterface, opts ...Option) (*Mongo, erro
 	}
 
 	s := Mongo{
-		db: client,
+		M: client,
 	}
 	return &s, nil
 }
