@@ -22,6 +22,7 @@ type api struct {
 
 func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
 	en := &api{cfg, l, repo}
+	r.HandleFunc("/post/list", en.getListPost).Methods(http.MethodGet)
 	r.HandleFunc("/post", en.getSpecificPost).Methods(http.MethodGet)
 	r.HandleFunc("/post", en.addPost).Methods(http.MethodPost)
 
@@ -32,7 +33,55 @@ func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, 
 	//r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 }
 
-// Метод получения конкретного объявления
+// Метод получения списка из 10 объявлений
+// Cортировки: по цене (возрастание/убывание) и по дате создания (возрастание/убывание)
+func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+
+	pageStr := queryParams.Get("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		page = 1
+	}
+	sortField := queryParams.Get("sortField")
+	sortOrder := queryParams.Get("sortOrder")
+
+	ads, err := a.repo.GetListPost(page, sortOrder, sortField)
+	if err != nil {
+		http.Error(w, "Ошибка при получении списка объявлений", http.StatusInternalServerError)
+		a.l.Error("Ошибка при получении списка объявлений", err)
+		return
+	}
+
+	// Создание среза для хранения только необходимых полей
+	var response []struct {
+		Name  string  `json:"name"`
+		Price float64 `json:"price"`
+	}
+
+	// Заполнение среза данными из ads
+	for _, ad := range ads {
+		response = append(response, struct {
+			Name  string  `json:"name"`
+			Price float64 `json:"price"`
+		}{
+			Name:  ad.Name,
+			Price: ad.Price,
+		})
+	}
+
+	// Установка заголовка Content-Type для ответа
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Ошибка при сериализации списка объявлений в JSON", http.StatusInternalServerError)
+		a.l.Error("Ошибка при сериализации списка объявлений в JSON", err)
+		return
+	}
+}
+
+// Метод получения конкретного объявления по id
 func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	idStr := queryParams.Get("id")
@@ -41,15 +90,15 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Не удалось получить параметр id", http.StatusBadRequest)
 	}
 
-	post, err := a.repo.GetSpecificPost(idStr)
+	ads, err := a.repo.GetSpecificPost(idStr)
 	if err != nil {
 		a.l.Error("Ошибка при получении данных", err)
 		http.Error(w, "Ошибка при получении данных", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(post)
+
 	// Проверка наличия обязательных полей
-	if post.Name == "" || post.Price == 0 {
+	if ads.Name == "" || ads.Price == 0 {
 		a.l.Debug("Обязательные поля объявления отсутствуют")
 		http.Error(w, "Обязательные поля объявления отсутствуют", http.StatusBadRequest)
 		return
@@ -58,15 +107,14 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 	// Проверка наличия параметра fields для запроса опциональных полей
 	fields := queryParams.Get("fields")
 	if fields == "description" {
-		// Если запрошены только описание, возвращаем только описание
 		response := struct {
 			Name        string  `json:"name"`
 			Description string  `json:"description"`
 			Price       float64 `json:"price"`
 		}{
-			Name:        post.Name,
-			Description: post.Description,
-			Price:       post.Price,
+			Name:        ads.Name,
+			Description: ads.Description,
+			Price:       ads.Price,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -82,8 +130,8 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 			Name  string  `json:"name"`
 			Price float64 `json:"price"`
 		}{
-			Name:  post.Name,
-			Price: post.Price,
+			Name:  ads.Name,
+			Price: ads.Price,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
