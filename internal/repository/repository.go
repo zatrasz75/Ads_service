@@ -21,6 +21,29 @@ func New(mg *mongo.Mongo, l logger.LoggersInterface, cfg *configs.Config) *Store
 	return &Store{l, mg, cfg}
 }
 
+// GetSpecificPost Получения конкретного объявления
+func (s *Store) GetSpecificPost(id string) (models.Ads, error) {
+	// Преобразование строкового ID в ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		s.l.Error("Не удалось преобразовать строковый ID в ObjectID", err)
+		return models.Ads{}, fmt.Errorf("не удалось преобразовать строковый ID в ObjectID: %w", err)
+	}
+
+	// Создание фильтра для поиска документа по ID
+	filter := bson.M{"_id": objectID}
+
+	// Выполнение поиска документа в коллекции
+	var result models.Ads
+	err = s.M.Database(s.cfg.Mongo.DbName).Collection(s.cfg.Mongo.CollectionName).FindOne(context.Background(), filter).Decode(&result)
+	if err != nil {
+		s.l.Error("Ошибка при поиске объявления по ID", err)
+		return models.Ads{}, fmt.Errorf("ошибка при поиске объявления по ID: %w", err)
+	}
+
+	return result, nil
+}
+
 // AddPost Добавляет новую запись
 func (s *Store) AddPost(ads models.Ads) (string, error) {
 	// Создание нового документа для MongoDB

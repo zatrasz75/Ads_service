@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 	"time"
 	"zatrasz75/Ads_service/configs"
 	"zatrasz75/Ads_service/internal/repository"
@@ -21,6 +22,7 @@ type api struct {
 
 func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
 	en := &api{cfg, l, repo}
+	r.HandleFunc("/post", en.getSpecificPost).Methods(http.MethodGet)
 	r.HandleFunc("/post", en.addPost).Methods(http.MethodPost)
 
 	r.HandleFunc("/", en.home).Methods(http.MethodGet)
@@ -28,6 +30,71 @@ func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, 
 	// Swagger UI
 	r.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/"))))
 	//r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+}
+
+// Метод получения конкретного объявления
+func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	idStr := queryParams.Get("id")
+	if idStr == "" {
+		a.l.Debug("Не удалось получить параметр id")
+		http.Error(w, "Не удалось получить параметр id", http.StatusBadRequest)
+	}
+
+	post, err := a.repo.GetSpecificPost(idStr)
+	if err != nil {
+		a.l.Error("Ошибка при получении данных", err)
+		http.Error(w, "Ошибка при получении данных", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(post)
+	// Проверка наличия обязательных полей
+	if post.Name == "" || post.Price == 0 {
+		a.l.Debug("Обязательные поля объявления отсутствуют")
+		http.Error(w, "Обязательные поля объявления отсутствуют", http.StatusBadRequest)
+		return
+	}
+
+	// Проверка наличия параметра fields для запроса опциональных полей
+	fields := queryParams.Get("fields")
+	if fields == "description" {
+		// Если запрошены только описание, возвращаем только описание
+		response := struct {
+			Name        string  `json:"name"`
+			Description string  `json:"description"`
+			Price       float64 `json:"price"`
+		}{
+			Name:        post.Name,
+			Description: post.Description,
+			Price:       post.Price,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			a.l.Error("Ошибка при сериализации ответа JSON", err)
+			http.Error(w, "Ошибка при сериализации ответа JSON", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Если не запрошено описание, возвращаем название и цену
+		response := struct {
+			Name  string  `json:"name"`
+			Price float64 `json:"price"`
+		}{
+			Name:  post.Name,
+			Price: post.Price,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			a.l.Error("Ошибка при сериализации ответа JSON", err)
+			http.Error(w, "Ошибка при сериализации ответа JSON", http.StatusInternalServerError)
+			return
+		}
+	}
+
 }
 
 // Метод создания объявления
@@ -41,15 +108,23 @@ func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.Creation = time.Now()
-	fmt.Println(p)
+
+	// Округление Price до двух знаков после запятой
+	roundedPriceStr := fmt.Sprintf("%.2f", p.Price)
+	roundedPrice, err := strconv.ParseFloat(roundedPriceStr, 64)
+	if err != nil {
+		http.Error(w, "не удалось округлить цену", http.StatusInternalServerError)
+		a.l.Error("не удалось округлить цену", err)
+		return
+	}
+	p.Price = roundedPrice
+
 	id, err := a.repo.AddPost(p)
 	if err != nil {
 		a.l.Error("Ошибка при добавлении данных", err)
 		http.Error(w, "Ошибка при добавлении данных", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("id:", id)
-
 	response := struct {
 		ID string
 	}{
