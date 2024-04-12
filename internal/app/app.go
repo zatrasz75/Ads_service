@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,7 +13,6 @@ import (
 )
 
 func Run(cfg *configs.Config, l logger.LoggersInterface) {
-	fmt.Println("ConnStr", cfg.Mongo.ConnStr)
 	mg, err := mongo.New(cfg.Mongo.ConnStr, l, mongo.OptionSet(cfg.Mongo.ConnAttempts, cfg.Mongo.ConnTimeout, cfg.Mongo.DbName, cfg.Mongo.CollectionName))
 
 	repo := repository.New(mg, l, cfg)
