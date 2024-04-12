@@ -9,3 +9,7 @@ type Ads struct {
 	Price       float64   `json:"price"`
 	Creation    time.Time `json:"creation"`
 }
+
+type Response struct {
+	ID string `json:"id"`
+}

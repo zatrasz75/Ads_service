@@ -3,9 +3,20 @@ package controller
 import (
 	"github.com/gorilla/mux"
 	"zatrasz75/Ads_service/configs"
+	_ "zatrasz75/Ads_service/docs"
 	"zatrasz75/Ads_service/internal/repository"
 	"zatrasz75/Ads_service/pkg/logger"
 )
+
+// @title Swagger API
+// @version 1.0
+// @description ТЗ test_task_backend.
+
+// @contact.url https://t.me/Zatrasz
+// @contact.email zatrasz@ya.ru
+
+// @host localhost:3131
+// @BasePath /
 
 // NewRouter -.
 func NewRouter(cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) *mux.Router {
