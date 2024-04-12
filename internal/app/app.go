@@ -14,6 +14,9 @@ import (
 
 func Run(cfg *configs.Config, l logger.LoggersInterface) {
 	mg, err := mongo.New(cfg.Mongo.ConnStr, l, mongo.OptionSet(cfg.Mongo.ConnAttempts, cfg.Mongo.ConnTimeout, cfg.Mongo.DbName, cfg.Mongo.CollectionName))
+	if err != nil {
+		l.Fatal("нет соединения с базой данных", err)
+	}
 
 	repo := repository.New(mg, l, cfg)
 

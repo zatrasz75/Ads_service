@@ -224,11 +224,6 @@ func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
 	response := models.Response{
 		ID: id,
 	}
-	//response := struct {
-	//	ID string
-	//}{
-	//	ID: id,
-	//}
 
 	// Установка заголовка Content-Type для ответа
 	w.Header().Set("Content-Type", "application/json")
