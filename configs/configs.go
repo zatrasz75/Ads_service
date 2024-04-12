@@ -31,7 +31,7 @@ type Config struct {
 	} `yaml:"mongo"`
 }
 
-func NewConfig(l logger.LoggersInterface) (*Config, error) {
+func NewConfig(l logger.LoggersInterface, path string) (*Config, error) {
 	var cfg Config
 
 	//if err := godotenv.Load(); err != nil {
@@ -41,7 +41,7 @@ func NewConfig(l logger.LoggersInterface) (*Config, error) {
 		l.Error("ошибка .env ", err)
 		return nil, err
 	}
-	if err := cleanenv.ReadConfig("./configs/configs.yml", &cfg); err != nil {
+	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		return nil, err
 	}
 
