@@ -18,10 +18,10 @@ definitions:
       id:
         type: string
     type: object
-host: localhost:3131
 info:
   contact:
     email: zatrasz@ya.ru
+    name: Михаил Токмачев
     url: https://t.me/Zatrasz
   description: ТЗ test_task_backend.
   title: Swagger API

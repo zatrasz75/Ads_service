@@ -10,6 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
+            "name": "Михаил Токмачев",
             "url": "https://t.me/Zatrasz",
             "email": "zatrasz@ya.ru"
         },
@@ -191,7 +192,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3131",
+	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Swagger API",

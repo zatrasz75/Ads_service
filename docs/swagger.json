@@ -4,12 +4,12 @@
         "description": "ТЗ test_task_backend.",
         "title": "Swagger API",
         "contact": {
+            "name": "Михаил Токмачев",
             "url": "https://t.me/Zatrasz",
             "email": "zatrasz@ya.ru"
         },
         "version": "1.0"
     },
-    "host": "localhost:3131",
     "basePath": "/",
     "paths": {
         "/post": {
