@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  ads:
+    env_file:
+      - .env
+    container_name: ads_service
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3131:3131"
+    depends_on:
+      - mongodb
+  mongodb:
+    env_file:
+      - .env
+    image: mongo:latest
+    container_name: ads_db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+    driver: local
+
+
+# docker compose up -d

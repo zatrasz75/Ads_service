@@ -1,0 +1,6 @@
+server:
+  app-host: localhost
+  app-port: 3232
+
+mongo:
+  connStr:

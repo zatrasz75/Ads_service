@@ -1,0 +1,130 @@
+basePath: /
+definitions:
+  models.Ads:
+    properties:
+      creation:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+    type: object
+  models.Response:
+    properties:
+      id:
+        type: string
+    type: object
+info:
+  contact:
+    email: zatrasz@ya.ru
+    name: Михаил Токмачев
+    url: https://t.me/Zatrasz
+  description: ТЗ test_task_backend.
+  title: Swagger API
+  version: "1.0"
+paths:
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Метод для получения информации о конкретном объявлении по его уникальному идентификатору.
+        Возвращает данные объявления, включая название, описание и цену.
+        Если поля название объявления или цена отсутствуют возвращает ошибку 400
+        Если запрошен параметр "fields" со значением "description", возвращает также описание объявления.
+      parameters:
+      - description: ID объявления
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Опциональные поля для запроса (например, description)
+        in: query
+        name: fields
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Обязательные поля объявления отсутствуют
+          schema:
+            type: string
+        "500":
+          description: Ошибка при получении данных
+          schema:
+            type: string
+      summary: Получение конкретного объявления по ID
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Метод для добавления нового объявления в систему.
+        Принимает поля: название, описание, цена (name , description , price).
+        Обязательные поля: название и цена (name и price).
+        Возвращает ID созданного объявления и код результата (ошибка или успех).
+      parameters:
+      - description: Объявление
+        in: body
+        name: ads
+        required: true
+        schema:
+          $ref: '#/definitions/models.Ads'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Обязательные поля name или price объявления отсутствуют
+          schema:
+            type: string
+        "500":
+          description: не удалось сериализовать ответ JSON
+          schema:
+            type: string
+      summary: Создание нового объявления
+  /posts/list:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Метод для получения списка объявлений с возможностью сортировки по цене или дате создания, а также пагинации.
+        Возвращает список объявлений с указанными параметрами сортировки и пагинации.
+      parameters:
+      - description: Номер страницы для пагинации (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Поле для сортировки (например, creation или price)
+        in: query
+        name: sortField
+        type: string
+      - description: Порядок сортировки (asc или desc)
+        in: query
+        name: sortOrder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Response'
+            type: array
+        "500":
+          description: Ошибка при сериализации списка объявлений в JSON
+          schema:
+            type: string
+      summary: Получение списка объявлений
+swagger: "2.0"

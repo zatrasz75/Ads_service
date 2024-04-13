@@ -1,0 +1,183 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "ТЗ test_task_backend.",
+        "title": "Swagger API",
+        "contact": {
+            "name": "Михаил Токмачев",
+            "url": "https://t.me/Zatrasz",
+            "email": "zatrasz@ya.ru"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/posts": {
+            "get": {
+                "description": "Метод для получения информации о конкретном объявлении по его уникальному идентификатору.\nВозвращает данные объявления, включая название, описание и цену.\nЕсли поля название объявления или цена отсутствуют возвращает ошибку 400\nЕсли запрошен параметр \"fields\" со значением \"description\", возвращает также описание объявления.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Получение конкретного объявления по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID объявления",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Опциональные поля для запроса (например, description)",
+                        "name": "fields",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Обязательные поля объявления отсутствуют",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении данных",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Метод для добавления нового объявления в систему.\nПринимает поля: название, описание, цена (name , description , price).\nОбязательные поля: название и цена (name и price).\nВозвращает ID созданного объявления и код результата (ошибка или успех).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Создание нового объявления",
+                "parameters": [
+                    {
+                        "description": "Объявление",
+                        "name": "ads",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Ads"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Обязательные поля name или price объявления отсутствуют",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "не удалось сериализовать ответ JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/list": {
+            "get": {
+                "description": "Метод для получения списка объявлений с возможностью сортировки по цене или дате создания, а также пагинации.\nВозвращает список объявлений с указанными параметрами сортировки и пагинации.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Получение списка объявлений",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы для пагинации (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поле для сортировки (например, creation или price)",
+                        "name": "sortField",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Порядок сортировки (asc или desc)",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Response"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при сериализации списка объявлений в JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Ads": {
+            "type": "object",
+            "properties": {
+                "creation": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.Response": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
