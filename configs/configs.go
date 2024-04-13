@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"time"
-	"zatrasz75/Ads_service/pkg/logger"
 )
 
 type Config struct {
 	Server struct {
-		AddrPort     string        `yaml:"port" env:"APP_PORT" env-description:"Server port" env-default:"3131"`
-		AddrHost     string        `yaml:"host" env:"APP_IP" env-description:"Server host" env-default:"0.0.0.0"`
+		AddrPort     string        `yaml:"app-port" env:"APP_PORT" env-description:"Server port" env-default:"3232"`
+		AddrHost     string        `yaml:"app-host" env:"APP_IP" env-description:"Server host" env-default:"0.0.0.0"`
 		ReadTimeout  time.Duration `yaml:"read-timeout" env:"READ_TIMEOUT" env-description:"Server ReadTimeout" env-default:"3s"`
 		WriteTimeout time.Duration `yaml:"write-timeout" env:"WRITE_TIMEOUT" env-description:"Server WriteTimeout" env-default:"3s"`
 		IdleTimeout  time.Duration `yaml:"idle-timeout" env:"IDLE_TIMEOUT" env-description:"Server IdleTimeout" env-default:"6s"`
@@ -20,8 +19,8 @@ type Config struct {
 		ConnStr string `yaml:"connStr" env:"MONGO_CONN_STR" env-description:"MongoDB connection string"`
 
 		Host           string `yaml:"host" env:"MONGO_HOST_DB" env-description:"db host" env-default:"localhost"`
-		User           string `yaml:"username" env:"MONGO_USER" env-description:"db username" env-default:"admin"`
-		Password       string `yaml:"password" env:"MONGO_PASSWORD" env-description:"db password" env-default:"password"`
+		User           string `yaml:"username" env:"MONGO_INITDB_ROOT_USERNAME" env-description:"db username" env-default:"admin"`
+		Password       string `yaml:"password" env:"MONGO_INITDB_ROOT_PASSWORD" env-description:"db password" env-default:"password"`
 		DbName         string `yaml:"db-name" env:"MONGO_DB_NAME" env-description:"db name" env-default:"mongodb"`
 		CollectionName string `yaml:"collectionName" env:"MONGO_COLLECTION_NAME" env-description:"collection name" env-default:"ads"`
 		Port           string `yaml:"port" env:"MONGO_PORT_DB" env-description:"db port" env-default:"27017"`
@@ -31,20 +30,12 @@ type Config struct {
 	} `yaml:"mongo"`
 }
 
-func NewConfig(l logger.LoggersInterface, path string) (*Config, error) {
+func NewConfig(path string) (*Config, error) {
 	var cfg Config
 
-	//if err := godotenv.Load(); err != nil {
-	//	l.Warn("системе не удается найти указанный файл .env: - %v", err)
-	//}
-	if err := cleanenv.ReadEnv(&cfg); err != nil {
-		l.Error("ошибка .env ", err)
-		return nil, err
-	}
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		return nil, err
 	}
-
 	cfg.Mongo.ConnStr = initDB(cfg)
 
 	return &cfg, nil

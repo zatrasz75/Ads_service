@@ -24,9 +24,9 @@ type api struct {
 
 func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
 	en := &api{cfg, l, repo}
-	r.HandleFunc("/post/list", en.getListPost).Methods(http.MethodGet)
-	r.HandleFunc("/post", en.getSpecificPost).Methods(http.MethodGet)
-	r.HandleFunc("/post", en.addPost).Methods(http.MethodPost)
+	r.HandleFunc("/posts/list", en.getListPost).Methods(http.MethodGet)
+	r.HandleFunc("/posts", en.getSpecificPost).Methods(http.MethodGet)
+	r.HandleFunc("/posts", en.addPost).Methods(http.MethodPost)
 
 	r.HandleFunc("/", en.home).Methods(http.MethodGet)
 
@@ -46,7 +46,7 @@ func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, 
 // @Success 200 {array} models.Response
 // @Failure 500 {string} string "Ошибка при получении списка объявлений"
 // @Failure 500 {string} string "Ошибка при сериализации списка объявлений в JSON"
-// @Router /post/list [get]
+// @Router /posts/list [get]
 // @OperationId getListPost
 func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
@@ -107,7 +107,7 @@ func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "Не удалось получить параметр id"
 // @Failure 400 {string} string "Обязательные поля объявления отсутствуют"
 // @Failure 500 {string} string "Ошибка при получении данных"
-// @Router /post [get]
+// @Router /posts [get]
 // @OperationId getSpecificPost
 func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
@@ -187,7 +187,7 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "не удалось округлить цену"
 // @Failure 500 {string} string "Ошибка при добавлении данных"
 // @Failure 500 {string} string "не удалось сериализовать ответ JSON"
-// @Router /post [post]
+// @Router /posts [post]
 // @OperationId addPost
 func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
 	var p models.Ads

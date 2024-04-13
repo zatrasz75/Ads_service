@@ -21,8 +21,8 @@ func main() {
 	// Построение абсолютного пути к файлу configs.yml
 	configPath := filepath.Join(cwd, "configs", "configs.yml")
 
-	// Configuration
-	cfg, err := configs.NewConfig(l, configPath)
+	// Конфигурация
+	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		l.Fatal("ошибка при разборе конфигурационного файла", err)
 	}
