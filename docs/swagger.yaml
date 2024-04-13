@@ -27,7 +27,7 @@ info:
   title: Swagger API
   version: "1.0"
 paths:
-  /post:
+  /posts:
     get:
       consumes:
       - application/json
@@ -93,7 +93,7 @@ paths:
           schema:
             type: string
       summary: Создание нового объявления
-  /post/list:
+  /posts/list:
     get:
       consumes:
       - application/json
