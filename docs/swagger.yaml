@@ -23,7 +23,9 @@ info:
     email: zatrasz@ya.ru
     name: Михаил Токмачев
     url: https://t.me/Zatrasz
-  description: ТЗ test_task_backend.
+  description: |-
+    ТЗ test_task_backend.
+    https://github.com/incidentware/test_task_backend/tree/main
   title: Swagger API
   version: "1.0"
 paths:
