@@ -11,6 +11,7 @@ import (
 // @title Swagger API
 // @version 1.0
 // @description ТЗ test_task_backend.
+// @description https://github.com/incidentware/test_task_backend/tree/main
 
 // @contact.name Михаил Токмачев
 // @contact.url https://t.me/Zatrasz

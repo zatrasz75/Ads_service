@@ -28,7 +28,7 @@ func Test_api_addPost_getSpecificPost(t *testing.T) {
 	configPath := filepath.Join(cwd, "..", "..", "configs", "configs.yml")
 
 	// Configuration
-	cfg, err := configs.NewConfig(l, configPath)
+	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		l.Fatal("ошибка при разборе конфигурационного файла", err)
 	}
@@ -109,7 +109,7 @@ func Test_api_getListPost(t *testing.T) {
 	configPath := filepath.Join(cwd, "..", "..", "configs", "configs.yml")
 
 	// Configuration
-	cfg, err := configs.NewConfig(l, configPath)
+	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		l.Fatal("ошибка при разборе конфигурационного файла", err)
 	}
