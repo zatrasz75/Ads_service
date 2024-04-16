@@ -196,7 +196,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Swagger API",
-	Description:      "ТЗ test_task_backend.",
+	Description:      "ТЗ test_task_backend.\nhttps://github.com/incidentware/test_task_backend/tree/main",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
