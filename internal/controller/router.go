@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"zatrasz75/Ads_service/configs"
 	_ "zatrasz75/Ads_service/docs"
 	"zatrasz75/Ads_service/internal/repository"
@@ -20,8 +20,8 @@ import (
 // @BasePath /
 
 // NewRouter -.
-func NewRouter(cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) *mux.Router {
-	r := mux.NewRouter()
+func NewRouter(cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) *gin.Engine {
+	r := gin.Default()
 	newEndpoint(r, cfg, l, repo)
 
 	return r
