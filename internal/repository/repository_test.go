@@ -25,7 +25,7 @@ func TestStore_AddPost_GetSpecificPost(t *testing.T) {
 	configPath := filepath.Join(cwd, "..", "..", "configs", "configs.yml")
 
 	// Configuration
-	cfg, err := configs.NewConfig(l, configPath)
+	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		l.Fatal("ошибка при разборе конфигурационного файла", err)
 	}
@@ -85,7 +85,7 @@ func TestStore_GetListPost_AddPost(t *testing.T) {
 	configPath := filepath.Join(cwd, "..", "..", "configs", "configs.yml")
 
 	// Configuration
-	cfg, err := configs.NewConfig(l, configPath)
+	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		l.Fatal("ошибка при разборе конфигурационного файла", err)
 	}
