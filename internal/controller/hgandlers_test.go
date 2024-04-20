@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +16,16 @@ import (
 	"zatrasz75/Ads_service/pkg/logger"
 	"zatrasz75/Ads_service/pkg/mongo"
 )
+
+type responseBodyWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (r responseBodyWriter) Write(b []byte) (int, error) {
+	r.body.Write(b)
+	return r.ResponseWriter.Write(b)
+}
 
 func Test_api_addPost_getSpecificPost(t *testing.T) {
 	l := logger.NewLogger()
@@ -55,22 +67,25 @@ func Test_api_addPost_getSpecificPost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr := httptest.NewRecorder()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Writer = &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: c.Writer}
 
-	a.addPost(rr, req)
+	a.addPost(c)
 
 	// Проверка кода статуса - это то, что мы ожидаем
-	if status := rr.Code; status != http.StatusOK {
+	if status := c.Writer.Status(); status != http.StatusOK {
 		t.Errorf("Получили code: %v Ожидали %v", status, http.StatusOK)
 	} else {
-		t.Log("OK:", http.StatusOK, rr.Body.String())
+		t.Log("OK:", http.StatusOK, c.Writer.(*responseBodyWriter).body.String())
 	}
 
 	// Извлечение ID из ответа
 	var response struct {
 		ID string `json:"id"`
 	}
-	if err = json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+	if err = json.Unmarshal(c.Writer.(*responseBodyWriter).body.Bytes(), &response); err != nil {
 		t.Fatalf("Ошибка при разборе JSON: %v", err)
 	}
 	// Проверка полученного ID
@@ -84,15 +99,18 @@ func Test_api_addPost_getSpecificPost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rrs := httptest.NewRecorder()
+	wGet := httptest.NewRecorder()
+	cGet, _ := gin.CreateTestContext(wGet)
+	cGet.Request = reqs
+	cGet.Writer = &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: cGet.Writer}
 
-	a.getSpecificPost(rrs, reqs)
+	a.getSpecificPost(cGet)
 
 	// Проверка кода статуса - это то, что мы ожидаем
-	if status := rrs.Code; status != http.StatusOK {
+	if status := cGet.Writer.Status(); status != http.StatusOK {
 		t.Errorf("Получили code: %v Ожидали %v", status, http.StatusOK)
 	} else {
-		t.Log("OK:", http.StatusOK, rrs.Body.String())
+		t.Log("OK:", http.StatusOK, cGet.Writer.(*responseBodyWriter).body.String())
 	}
 }
 
@@ -130,14 +148,17 @@ func Test_api_getListPost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr := httptest.NewRecorder()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Writer = &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: c.Writer}
 
-	a.getListPost(rr, req)
+	a.getListPost(c)
 
 	// Проверка кода статуса - это то, что мы ожидаем
-	if status := rr.Code; status != http.StatusOK {
+	if status := c.Writer.Status(); status != http.StatusOK {
 		t.Errorf("Получили code: %v Ожидали %v", status, http.StatusOK)
 	} else {
-		t.Log("OK:", http.StatusOK, rr.Body.String())
+		t.Log("OK:", http.StatusOK, c.Writer.(*responseBodyWriter).body.String())
 	}
 }
