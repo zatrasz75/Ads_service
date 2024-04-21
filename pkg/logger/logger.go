@@ -2,6 +2,8 @@ package logger
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,6 +37,17 @@ func NewLogger() LoggersInterface {
 		logger:  logger,
 		logFile: file,
 	}
+
+	// Для Gin -------------------------------------------------------------------------
+
+	// Комбинированный вывод для файла и стандартного вывода
+	combinedOutput := io.MultiWriter(file, os.Stdout)
+
+	// Перенаправляем стандартный вывод и стандартный вывод ошибок Gin в файл журнала
+	gin.DefaultWriter = combinedOutput
+	gin.DefaultErrorWriter = combinedOutput
+
+	// ----------------------------------------------------------------------------------
 
 	// Запускаем горутину для проверки размера файла и его обработки
 	go myLogger.checkAndRotateLogFile()

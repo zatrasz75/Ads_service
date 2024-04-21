@@ -3,8 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,17 +23,16 @@ type api struct {
 	repo storage.RepositoryInterface
 }
 
-func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
+func newEndpoint(r *gin.Engine, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
 	en := &api{cfg, l, repo}
-	r.HandleFunc("/posts/list", en.getListPost).Methods(http.MethodGet)
-	r.HandleFunc("/posts", en.getSpecificPost).Methods(http.MethodGet)
-	r.HandleFunc("/posts", en.addPost).Methods(http.MethodPost)
+	r.GET("/posts/list", en.getListPost)
+	r.GET("/posts", en.getSpecificPost)
+	r.POST("/posts", en.addPost)
 
-	r.HandleFunc("/", en.home).Methods(http.MethodGet)
+	r.GET("/", en.home)
 
 	// Swagger UI
-	r.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/"))))
-	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 // @Summary Получение списка объявлений
@@ -48,20 +48,18 @@ func newEndpoint(r *mux.Router, cfg *configs.Config, l logger.LoggersInterface, 
 // @Failure 500 {string} string "Ошибка при сериализации списка объявлений в JSON"
 // @Router /posts/list [get]
 // @OperationId getListPost
-func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-
-	pageStr := queryParams.Get("page")
+func (a *api) getListPost(c *gin.Context) {
+	pageStr := c.Query("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
 		page = 1
 	}
-	sortField := queryParams.Get("sortField")
-	sortOrder := queryParams.Get("sortOrder")
+	sortField := c.Query("sortField")
+	sortOrder := c.Query("sortOrder")
 
 	ads, err := a.repo.GetListPost(page, sortField, sortOrder)
 	if err != nil {
-		http.Error(w, "Ошибка при получении списка объявлений", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "при получении списка объявлений"})
 		a.l.Error("Ошибка при получении списка объявлений", err)
 		return
 	}
@@ -83,14 +81,10 @@ func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Установка заголовка Content-Type для ответа
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Ошибка при сериализации списка объявлений в JSON", http.StatusInternalServerError)
-		a.l.Error("Ошибка при сериализации списка объявлений в JSON", err)
-		return
+	c.JSON(http.StatusOK, response)
+	if len(c.Errors) > 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сериализации списка объявлений в JSON"})
+		a.l.Debug("Ошибка при сериализации списка объявлений в JSON")
 	}
 }
 
@@ -109,31 +103,32 @@ func (a *api) getListPost(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Ошибка при получении данных"
 // @Router /posts [get]
 // @OperationId getSpecificPost
-func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	idStr := queryParams.Get("id")
+func (a *api) getSpecificPost(c *gin.Context) {
+	idStr := c.Query("id")
+
 	if idStr == "" {
-		a.l.Debug("Не удалось получить параметр id")
-		http.Error(w, "Не удалось получить параметр id", http.StatusBadRequest)
+		a.l.Debug("не удалось получить параметр id")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "не удалось получить параметр id"})
+
 		return
 	}
 
 	ads, err := a.repo.GetSpecificPost(idStr)
 	if err != nil {
-		a.l.Error("Ошибка при получении данных", err)
-		http.Error(w, "Ошибка при получении данных", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при получении данных"})
+		a.l.Error("ошибка при получении данных", err)
 		return
 	}
 
 	// Проверка наличия обязательных полей
 	if ads.Name == "" || ads.Price == 0 {
-		a.l.Debug("Обязательные поля объявления отсутствуют")
-		http.Error(w, "Обязательные поля объявления отсутствуют", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "обязательные поля объявления отсутствуют"})
+		a.l.Debug("обязательные поля объявления отсутствуют")
 		return
 	}
 
 	// Проверка наличия параметра fields для запроса опциональных полей
-	fields := queryParams.Get("fields")
+	fields := c.Query("fields")
 	if fields == "description" {
 		response := struct {
 			Name        string  `json:"name"`
@@ -144,14 +139,9 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 			Description: ads.Description,
 			Price:       ads.Price,
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(response)
-		if err != nil {
-			a.l.Error("Ошибка при сериализации ответа JSON", err)
-			http.Error(w, "Ошибка при сериализации ответа JSON", http.StatusInternalServerError)
-			return
-		}
+
+		c.JSON(http.StatusOK, response)
+
 	} else {
 		// Если не запрошено описание, возвращаем название и цену
 		response := struct {
@@ -161,16 +151,13 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 			Name:  ads.Name,
 			Price: ads.Price,
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(response)
-		if err != nil {
-			a.l.Error("Ошибка при сериализации ответа JSON", err)
-			http.Error(w, "Ошибка при сериализации ответа JSON", http.StatusInternalServerError)
-			return
+
+		c.JSON(http.StatusOK, response)
+		if len(c.Errors) > 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сериализации списка объявлений в JSON"})
+			a.l.Debug("Ошибка при сериализации списка объявлений в JSON")
 		}
 	}
-
 }
 
 // @Summary Создание нового объявления
@@ -189,18 +176,18 @@ func (a *api) getSpecificPost(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "не удалось сериализовать ответ JSON"
 // @Router /posts [post]
 // @OperationId addPost
-func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
+func (a *api) addPost(c *gin.Context) {
 	var p models.Ads
 
-	err := json.NewDecoder(r.Body).Decode(&p)
+	err := json.NewDecoder(c.Request.Body).Decode(&p)
 	if err != nil {
-		http.Error(w, "не удалось проанализировать запрос JSON", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "не удалось проанализировать запрос JSON"})
 		a.l.Error("не удалось проанализировать запрос JSON", err)
 		return
 	}
 	if p.Name == "" || p.Price == 0 {
-		a.l.Debug("Обязательные поля name или price объявления отсутствуют")
-		http.Error(w, "Обязательные поля name или price объявления отсутствуют", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "обязательные поля name или price объявления отсутствуют"})
+		a.l.Debug("обязательные поля name или price объявления отсутствуют")
 		return
 	}
 	p.Creation = time.Now()
@@ -209,7 +196,7 @@ func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
 	roundedPriceStr := fmt.Sprintf("%.2f", p.Price)
 	roundedPrice, err := strconv.ParseFloat(roundedPriceStr, 64)
 	if err != nil {
-		http.Error(w, "не удалось округлить цену", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось округлить цену"})
 		a.l.Error("не удалось округлить цену", err)
 		return
 	}
@@ -217,36 +204,28 @@ func (a *api) addPost(w http.ResponseWriter, r *http.Request) {
 
 	id, err := a.repo.AddPost(p)
 	if err != nil {
-		a.l.Error("Ошибка при добавлении данных", err)
-		http.Error(w, "Ошибка при добавлении данных", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при добавлении данных"})
+		a.l.Error("ошибка при добавлении данных", err)
 		return
 	}
 	response := models.Response{
 		ID: id,
 	}
 
-	// Установка заголовка Content-Type для ответа
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	// Сериализация структуры ответа в JSON и запись в http.ResponseWriter
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "не удалось сериализовать ответ JSON", http.StatusInternalServerError)
-		a.l.Error("не удалось сериализовать ответ JSON", err)
-		return
+	c.JSON(http.StatusOK, response)
+	if len(c.Errors) > 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сериализации списка объявлений в JSON"})
+		a.l.Debug("Ошибка при сериализации списка объявлений в JSON")
 	}
 }
 
-func (a *api) home(w http.ResponseWriter, _ *http.Request) {
-	// Устанавливаем правильный Content-Type для HTML
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
+func (a *api) home(c *gin.Context) {
 	// Выводим дополнительную строку на страницу
-	str := []byte("Добро пожаловать! ")
+	str := "Добро пожаловать! "
 
-	_, err := fmt.Fprintf(w, "<p>%s</p>", str)
-	if err != nil {
-		http.Error(w, "Ошибка записи на страницу", http.StatusInternalServerError)
-		a.l.Error("Ошибка записи на страницу", err)
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(str))
+	if len(c.Errors) > 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сериализации списка объявлений в JSON"})
+		a.l.Debug("Ошибка при сериализации списка объявлений в JSON")
 	}
 }
