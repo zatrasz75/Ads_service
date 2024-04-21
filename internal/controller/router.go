@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"zatrasz75/Ads_service/configs"
 	_ "zatrasz75/Ads_service/docs"
+	"zatrasz75/Ads_service/internal/firebaseApp"
 	"zatrasz75/Ads_service/internal/repository"
 	"zatrasz75/Ads_service/pkg/logger"
 )
@@ -20,9 +21,9 @@ import (
 // @BasePath /
 
 // NewRouter -.
-func NewRouter(cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) *gin.Engine {
+func NewRouter(cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store, fa *firebaseApp.FirebaseApp) *gin.Engine {
 	r := gin.Default()
-	newEndpoint(r, cfg, l, repo)
+	newEndpoint(r, cfg, l, repo, fa)
 
 	return r
 }

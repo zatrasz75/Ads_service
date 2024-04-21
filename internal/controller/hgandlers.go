@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,7 @@ import (
 	"time"
 	"zatrasz75/Ads_service/configs"
 	_ "zatrasz75/Ads_service/docs"
+	"zatrasz75/Ads_service/internal/firebaseApp"
 	"zatrasz75/Ads_service/internal/repository"
 	"zatrasz75/Ads_service/internal/storage"
 	"zatrasz75/Ads_service/models"
@@ -21,10 +23,11 @@ type api struct {
 	Cfg  *configs.Config
 	l    logger.LoggersInterface
 	repo storage.RepositoryInterface
+	fa   storage.RepositoryInterface
 }
 
-func newEndpoint(r *gin.Engine, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store) {
-	en := &api{cfg, l, repo}
+func newEndpoint(r *gin.Engine, cfg *configs.Config, l logger.LoggersInterface, repo *repository.Store, fa *firebaseApp.FirebaseApp) {
+	en := &api{cfg, l, repo, fa}
 	r.GET("/posts/list", en.getListPost)
 	r.GET("/posts", en.getSpecificPost)
 	r.POST("/posts", en.addPost)
@@ -49,6 +52,13 @@ func newEndpoint(r *gin.Engine, cfg *configs.Config, l logger.LoggersInterface, 
 // @Router /posts/list [get]
 // @OperationId getListPost
 func (a *api) getListPost(c *gin.Context) {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	_ = httpClient // Используем пустой идентификатор для httpClient
+
 	pageStr := c.Query("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
@@ -57,7 +67,7 @@ func (a *api) getListPost(c *gin.Context) {
 	sortField := c.Query("sortField")
 	sortOrder := c.Query("sortOrder")
 
-	ads, err := a.repo.GetListPost(page, sortField, sortOrder)
+	ads, err := a.fa.GetListPost(page, sortField, sortOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "при получении списка объявлений"})
 		a.l.Error("Ошибка при получении списка объявлений", err)
@@ -113,7 +123,7 @@ func (a *api) getSpecificPost(c *gin.Context) {
 		return
 	}
 
-	ads, err := a.repo.GetSpecificPost(idStr)
+	ads, err := a.fa.GetSpecificPost(idStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при получении данных"})
 		a.l.Error("ошибка при получении данных", err)
@@ -202,7 +212,7 @@ func (a *api) addPost(c *gin.Context) {
 	}
 	p.Price = roundedPrice
 
-	id, err := a.repo.AddPost(p)
+	id, err := a.fa.AddPost(p)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ошибка при добавлении данных"})
 		a.l.Error("ошибка при добавлении данных", err)

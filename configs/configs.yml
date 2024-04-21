@@ -4,3 +4,6 @@ server:
 
 mongo:
   connStr:
+
+firebase:
+  firebaseStr: adsservice-d337c-firebase-adminsdk-44bfm-976bbe4cb2.json

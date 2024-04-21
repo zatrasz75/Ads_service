@@ -1,12 +1,16 @@
 package app
 
 import (
+	"context"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"zatrasz75/Ads_service/configs"
 	"zatrasz75/Ads_service/internal/controller"
+	"zatrasz75/Ads_service/internal/firebaseApp"
 	"zatrasz75/Ads_service/internal/repository"
+	"zatrasz75/Ads_service/pkg/firebase"
 	"zatrasz75/Ads_service/pkg/logger"
 	"zatrasz75/Ads_service/pkg/mongo"
 	"zatrasz75/Ads_service/pkg/server"
@@ -18,9 +22,17 @@ func Run(cfg *configs.Config, l logger.LoggersInterface) {
 		l.Fatal("нет соединения с базой данных", err)
 	}
 
+	app, err := firebase.NewFirebase(cfg)
+	if err != nil {
+		log.Fatalf("нет соединения с базой данных Firebase: %v", err)
+	}
+	ctx := context.Background()
+
+	fa, _ := firebaseApp.New(l, cfg, ctx, app)
+
 	repo := repository.New(mg, l, cfg)
 
-	router := controller.NewRouter(cfg, l, repo)
+	router := controller.NewRouter(cfg, l, repo, fa)
 
 	srv := server.New(router, server.OptionSet(cfg.Server.AddrHost, cfg.Server.AddrPort, cfg.Server.ReadTimeout, cfg.Server.WriteTimeout, cfg.Server.IdleTimeout, cfg.Server.ShutdownTime))
 

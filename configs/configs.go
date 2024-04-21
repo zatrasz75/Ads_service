@@ -28,6 +28,9 @@ type Config struct {
 		ConnAttempts int           `yaml:"conn-attempts" env:"MONGO_CONN_ATTEMPTS" env-description:"db ConnAttempts" env-default:"5"`
 		ConnTimeout  time.Duration `yaml:"conn-timeout" env:"MONGO_TIMEOUT" env-description:"db ConnTimeout" env-default:"1s"`
 	} `yaml:"mongo"`
+	Firebase struct {
+		ConnStr string `yaml:"firebaseStr" env:"GOOGLE_APPLICATION_CREDENTIALS" env-description:"Firebase connection file"`
+	} `yaml:"firebase"`
 }
 
 func NewConfig(path string) (*Config, error) {
